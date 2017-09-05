@@ -8,6 +8,9 @@ import org.json.JSONObject
  */
 object Utils {
 
+    //Se crean las url de conexion
+    val BASE_URL = "http://api.openweathermap.org/data/2.5/weather?q="
+    val ICON_URL = "http://api.openweathermap.org/img/w/"
 
     //Se crean distintos métodos para tratar los valores de distintos tipos leídos de un JSON
 
