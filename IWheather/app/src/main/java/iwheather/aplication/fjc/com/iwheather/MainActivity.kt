@@ -1,13 +1,20 @@
 package iwheather.aplication.fjc.com.iwheather
 
+import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.AsyncTask
 import android.os.Bundle
+import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
+import android.text.InputType
 import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
+import android.widget.EditText
 import data.HttpClientClima
 import data.JSONParseClima
+import data.PreferencesCity
 import kotlinx.android.synthetic.main.activity_main.*
 import model.Clima
 import org.apache.http.HttpStatus
@@ -27,11 +34,25 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        renderClimaDatos("Madrid")
+        //Tratamiento del las preferencias de usario
+        var cityPrefer : PreferencesCity = PreferencesCity(this)
+
+
+        //Recuperar los datos del API
+        //renderClimaDatos("Madrid")
+        if (cityPrefer.ciudad != null){
+
+            renderClimaDatos(cityPrefer.ciudad)
+        }else {
+
+            renderClimaDatos("Madrid,ES")
+        }
+
+
 
     }
 
-    //Se crea una función que rederice los datos y complete la URL del API
+    //Se crea una función que renderice los datos (ClimaTask) y complete la URL del API
     fun renderClimaDatos(ciudad: String) {
 
         val climaTask = ClimaTask()
@@ -42,6 +63,7 @@ class MainActivity : AppCompatActivity() {
 
     //Se crea una clase privada para llamada asincrona al API y obtener imagenes
     //El inner se pone para poder acceder a la imageView que está fuera
+    @SuppressLint("StaticFieldLeak")
     private inner class DescargarImagenAsync : AsyncTask <String, Void, Bitmap>(){
 
         override fun doInBackground(vararg p0: String?): Bitmap {
@@ -110,6 +132,7 @@ class MainActivity : AppCompatActivity() {
 
     //Se crea una clase privada para la llamada asincrona al API y obtener sus datoa
     //El inner se pone para poder acceder a la varibla global clima
+    @SuppressLint("StaticFieldLeak")
     private inner class ClimaTask : AsyncTask<String, Void, Clima>() {
 
         override fun doInBackground(vararg p0: String?): Clima {
@@ -155,6 +178,65 @@ class MainActivity : AppCompatActivity() {
 
         }
 
+    }
+
+
+    //Tratamiento de Menus
+    fun MostrarDialog(){
+
+        var builder = AlertDialog.Builder (this)
+        builder.setTitle("Cambiar Ciudad")
+
+        //Se crea un EditText para cambiar de ciudad
+        val ponerCiudad = EditText(this)
+        //El editor es de tipo texto
+        ponerCiudad.inputType = InputType.TYPE_CLASS_TEXT
+
+        //Poner un hint (como un placeholder)
+        ponerCiudad.hint ="Merida,MX"
+
+        builder.setView(ponerCiudad)
+
+        builder.setNegativeButton("CANCEL") {dialogInterface, i ->
+
+            ponerCiudad.clearAnimation()
+
+        }
+
+        builder.setPositiveButton("OK") {dialogInterface, i ->
+
+            val ciudadPrefer = PreferencesCity(this)
+            ciudadPrefer.ciudad=ponerCiudad.text.toString()
+
+            /*if (ponerCiudad.text == null){
+                ciudadPrefer.ciudad = "Madrid,ES"
+            }*/
+
+            val ciudadNueva = ciudadPrefer.ciudad
+
+            if (ciudadNueva != null){
+            renderClimaDatos(ciudadNueva)
+            } else {
+                renderClimaDatos("Madrid")
+            }
+
+        }.show()
+
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.menu, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+
+        when (item!!.itemId){
+
+            R.id.menuChange -> MostrarDialog()
+
+        }
+        return true
     }
 
 }

@@ -53,7 +53,7 @@ object JSONParseClima {
 
             val vientoObj = Utils.getObject("wind",jsonObject)
             clima.viento.velocidad = Utils.getFloat("speed",vientoObj)
-            clima.viento.cent = Utils.getFloat("deg",vientoObj)
+            //clima.viento.cent = Utils.getFloat("deg",vientoObj)
 
 
             val nubeObj = Utils.getObject("clouds",jsonObject)
