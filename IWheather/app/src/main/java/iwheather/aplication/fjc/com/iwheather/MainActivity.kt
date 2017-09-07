@@ -1,12 +1,21 @@
 package iwheather.aplication.fjc.com.iwheather
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.os.AsyncTask
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
+import android.util.Log
 import data.HttpClientClima
 import data.JSONParseClima
 import kotlinx.android.synthetic.main.activity_main.*
 import model.Clima
+import org.apache.http.HttpStatus
+import org.apache.http.client.methods.HttpGet
+import org.apache.http.impl.client.DefaultHttpClient
+import utils.Utils
+import java.io.IOException
+import java.io.InputStream
 import java.text.DecimalFormat
 import java.util.*
 
@@ -31,7 +40,75 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    //Se crea una clase privada para la llamada asincrona del API
+    //Se crea una clase privada para llamada asincrona al API y obtener imagenes
+    //El inner se pone para poder acceder a la imageView que está fuera
+    private inner class DescargarImagenAsync : AsyncTask <String, Void, Bitmap>(){
+
+        override fun doInBackground(vararg p0: String?): Bitmap {
+            //Se llama a la función que descarga la imagen
+            return descargarImagen(p0[0] as String)
+        }
+
+
+        override fun onPostExecute(result: Bitmap?) {
+            super.onPostExecute(result)
+            //Cargar la imagen en nuestro ImageView
+            imageViewCity.setImageBitmap(result)
+        }
+
+        //Esta funcion va a descargar la imagen del API
+        fun descargarImagen (codigo : String) : Bitmap{
+
+            val cliente = DefaultHttpClient()
+
+            //Aquí se monta la URL completa para descargar la imagen
+            val getRequest = HttpGet(Utils.ICON_URL + codigo + ".png")
+
+            try {
+
+                val response = cliente.execute(getRequest)
+
+                //Si se produce algún error se maneja con la siguiente línea
+                val statusCodigo =  response.statusLine.statusCode
+
+                //Se comprueba el valor de statusCodigo
+                if (statusCodigo != HttpStatus.SC_OK){
+
+                    //Se produce un error y se para la descarga
+                    Log.e("DescargaImagen", "Error :" + statusCodigo)
+                    return null!!
+                }
+
+                //Almacenamos los datos si llegan
+                val entity = response.entity
+
+                //Nos está llegando un Stream (los datos de la imagen)
+                if (entity != null){
+
+                    val inputStream : InputStream?
+                    inputStream = entity.content
+
+                    //Para decodificar este Stream
+
+                    val bitmap : Bitmap = BitmapFactory.decodeStream(inputStream)
+                    return bitmap
+
+                }
+
+
+
+            }catch (e: IOException){
+
+                e.printStackTrace()
+            }
+
+            return null!!
+
+        }
+    }
+
+
+    //Se crea una clase privada para la llamada asincrona al API y obtener sus datoa
     //El inner se pone para poder acceder a la varibla global clima
     private inner class ClimaTask : AsyncTask<String, Void, Clima>() {
 
@@ -40,6 +117,10 @@ class MainActivity : AppCompatActivity() {
             //Se instacia nuestra clase HttpClientClima
             var datos = HttpClientClima().getWheatherData(p0[0])
             clima = JSONParseClima.getWheather(datos)!!
+
+            //Se recupera la imagen
+            clima.icon=clima.condicionActual.icono
+            DescargarImagenAsync().execute(clima.icon)
 
             return clima
 
